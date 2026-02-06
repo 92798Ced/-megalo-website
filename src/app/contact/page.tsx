@@ -1,18 +1,39 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function ContactPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
 
+    const form = e.currentTarget;
+
+    const payload = {
+      full_name: (form.fullName as any).value.trim(),
+      email: (form.email as any).value.trim(),
+      phone: (form.phone as any).value.trim(),
+      project_type: (form.projectType as any).value,
+      message: (form.message as any).value.trim(),
+    };
+
     try {
-      // Frontend-only placeholder for now (no API yet)
-      await new Promise((r) => setTimeout(r, 800));
-      alert("Submitted (placeholder). Next step: connect to Supabase API.");
+      const res = await fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "Submission failed.");
+
+      router.push(`/thank-you?ref=${encodeURIComponent(json.ref)}`);
+    } catch (err: any) {
+      alert(err.message || "Submission failed.");
     } finally {
       setLoading(false);
     }
